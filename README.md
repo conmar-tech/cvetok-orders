@@ -26,7 +26,7 @@ Create the following variables in Vercel (`Project Settings → Environment Vari
 | --- | --- |
 | `SHOPIFY_STORE_DOMAIN` | Your myshopify domain, e.g. `fge1nm-i1.myshopify.com`. |
 | `SHOPIFY_ADMIN_ACCESS_TOKEN` | Admin API access token from the custom app (keep private!). |
-| `CORS_ALLOW_ORIGIN` *(optional)* | Origin that is allowed to call the endpoint, e.g. `https://artificial-floral.com`. Defaults to `*`. |
+| `CORS_ALLOW_ORIGIN` *(optional)* | Comma-separated list of origins allowed to call the endpoint, e.g. `https://artificial-floral.com,http://127.0.0.1:9292`. Defaults to `*`. |
 | `SHOPIFY_API_VERSION` *(optional)* | Shopify Admin API version to use (defaults to `2024-07`). |
 
 ### Shopify theme configuration

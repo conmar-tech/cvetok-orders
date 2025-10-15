@@ -2,13 +2,46 @@ const ALLOWED_METHODS = ['POST', 'OPTIONS'];
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_STORE_DOMAIN;
 const SHOPIFY_TOKEN = process.env.SHOPIFY_ADMIN_ACCESS_TOKEN;
 const SHOPIFY_API_VERSION = process.env.SHOPIFY_API_VERSION || '2024-07';
-const CORS_ALLOW_ORIGIN = process.env.CORS_ALLOW_ORIGIN || '*';
+const RAW_CORS_ALLOW_ORIGIN = process.env.CORS_ALLOW_ORIGIN || '*';
 
-function setCors(res) {
-  res.setHeader('Access-Control-Allow-Origin', CORS_ALLOW_ORIGIN);
+function parseAllowedOrigins() {
+  if (RAW_CORS_ALLOW_ORIGIN === '*') return ['*'];
+  return RAW_CORS_ALLOW_ORIGIN.split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
+function resolveOriginHeader(requestOrigin) {
+  const allowedOrigins = parseAllowedOrigins();
+  if (allowedOrigins.includes('*')) return '*';
+  if (!requestOrigin) return null;
+  if (allowedOrigins.includes(requestOrigin)) return requestOrigin;
+  return null;
+}
+
+function setCors(req, res) {
+  const requestedHeaders = req.headers['access-control-request-headers'];
+  const requestedMethod = req.headers['access-control-request-method'];
+  const allowedOrigin = resolveOriginHeader(req.headers.origin);
+
+  if (!allowedOrigin) {
+    return false;
+  }
+
+  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+  res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', ALLOWED_METHODS.join(','));
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (requestedHeaders) {
+    res.setHeader('Access-Control-Allow-Headers', requestedHeaders);
+  } else {
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  }
+  if (requestedMethod) {
+    res.setHeader('Access-Control-Allow-Method', requestedMethod);
+  }
   res.setHeader('Access-Control-Max-Age', '86400');
+
+  return true;
 }
 
 function sendJson(res, status, payload) {
@@ -96,7 +129,17 @@ function validatePayload(payload) {
 }
 
 module.exports = async (req, res) => {
-  setCors(res);
+  const corsAllowed = setCors(req, res);
+  if (!corsAllowed) {
+    if (req.method === 'OPTIONS') {
+      return res.status(204).end();
+    }
+    const requestedOrigin = req.headers.origin || 'unknown';
+    return sendJson(res, 403, {
+      error: 'forbidden_origin',
+      message: `Origin ${requestedOrigin} is not allowed.`
+    });
+  }
 
   if (!ALLOWED_METHODS.includes(req.method)) {
     return sendJson(res, 405, { error: 'method_not_allowed' });
@@ -199,4 +242,3 @@ module.exports = async (req, res) => {
     return sendJson(res, 500, { error: 'internal_error', message: error.message });
   }
 };
-
