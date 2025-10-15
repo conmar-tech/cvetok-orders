@@ -1,0 +1,13 @@
+{
+  "name": "cvetok-orders",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Serverless handler for converting Shopify quote requests into draft orders.",
+  "author": "",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
